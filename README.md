@@ -93,17 +93,15 @@ SmartParkingSystem/
 │       └── secrets.example.h
 │
 ├── .gitignore
-├── LICENSE
 └── README.md
 
-*The structure above represents the intended project organization. Some supporting files may vary depending on the current implementation.*
 
 ## Getting Started
 
 ### Prerequisites
 
 - Visual Studio 2022 with the ASP.NET and web development workload.
-- .NET 6 SDK.
+- .NET 8 SDK.
 - SQL Server LocalDB.
 - VS Code with the Live Server extension, or another static file server.
 - Google Maps API key with the Maps JavaScript API and Directions API enabled.
