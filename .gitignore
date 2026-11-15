@@ -1,0 +1,37 @@
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.cache
+
+# .NET build files
+bin/
+obj/
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
+
+# Node / Frontend
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+
+# Local secrets
+secrets.json
+appsettings.Development.json
+*.pfx
+*.p12
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+config.js

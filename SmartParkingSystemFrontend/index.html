@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="LASU Smart Parking System – Real-time parking availability for Lagos State University, Ojo Campus." />
+  <meta name="theme-color" content="#006400" />
+  <title>LASU Smart Parking</title>
+
+ 
+  <link rel="manifest" href="manifest.json" />
+
+  <link rel="stylesheet" href="css/main.css" />
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+</head>
+<body>
+
+  
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <div class="brand-logo">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="40" height="40" rx="8" fill="#fff2"/>
+            <path d="M8 28V16l12-8 12 8v12H24v-7h-8v7H8Z" fill="#ffffff"/>
+            <rect x="17" y="22" width="6" height="6" rx="1" fill="#006400"/>
+            <circle cx="20" cy="10" r="2" fill="#FFD700"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">LASU Smart Parking</span>
+          <span class="brand-sub">Ojo Campus · Real-time Availability</span>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <div class="connection-badge" id="connectionBadge" title="SignalR real-time connection status">
+          <span class="conn-dot" id="connDot"></span>
+          <span class="conn-label" id="connLabel">Connecting…</span>
+        </div>
+
+        <div class="view-toggle" role="group" aria-label="View selector">
+          <button class="toggle-btn active" id="btnGrid" onclick="App.setView('grid')" aria-pressed="true">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 3h6v6H3V3zm8 0h6v6h-6V3zM3 11h6v6H3v-6zm8 0h6v6h-6v-6z"/></svg>
+            Grid
+          </button>
+          <button class="toggle-btn" id="btnMap" onclick="App.setView('map')" aria-pressed="false">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 2l6 2 4-2v14l-4 2-6-2-4 2V4l4-2zm0 2.18v10.4l2 .67V4.85L7 4.18zm4 .67v10.4l2-.67V4.85l-2.67-.89L11 4.85zm4-.67v10.4l2-.67V4.18l-2 .67z"/></svg>
+            Map
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  
+  <div class="stats-bar" id="statsBar">
+    <div class="stat-chip">
+      <span class="stat-val" id="statTotal">–</span>
+      <span class="stat-label">Total Spaces</span>
+    </div>
+    <div class="stat-chip available">
+      <span class="stat-val" id="statAvail">–</span>
+      <span class="stat-label">Available</span>
+    </div>
+    <div class="stat-chip occupied">
+      <span class="stat-val" id="statOccupied">–</span>
+      <span class="stat-label">Occupied</span>
+    </div>
+    <div class="stat-chip inactive">
+      <span class="stat-val" id="statInactive">–</span>
+      <span class="stat-label">Coming Soon</span>
+    </div>
+  </div>
+
+  
+  <main class="app-main">
+
+    
+    <section id="gridView" class="view active" aria-label="Parking Grid View">
+      <div class="legend">
+        <div class="legend-item"><span class="legend-dot available"></span> Available</div>
+        <div class="legend-item"><span class="legend-dot occupied"></span> Occupied</div>
+        <div class="legend-item"><span class="legend-dot inactive"></span> Coming Soon</div>
+      </div>
+      <div class="faculties-grid" id="facultiesGrid">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading faculty data…</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAP VIEW -->
+    <section id="mapView" class="view" aria-label="Navigation Map View">
+      <div class="map-layout">
+        <aside class="map-sidebar">
+          <h2 class="sidebar-title">Navigate to Faculty</h2>
+          <div class="faculty-search-wrap">
+            <input type="search" id="facultySearch" placeholder="Search faculty…"
+                   oninput="App.filterFacultyList(this.value)"
+                   aria-label="Search faculties" />
+          </div>
+          <ul class="faculty-nav-list" id="facultyNavList" role="listbox" aria-label="Faculty list"></ul>
+
+          <div class="route-panel" id="routePanel" style="display:none">
+            <h3 class="route-title" id="routeDestTitle">–</h3>
+            <div class="route-meta">
+              <div class="route-chip">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 100 12A6 6 0 0010 2zm0 2a4 4 0 110 8 4 4 0 010-8zm0 10a8 8 0 100 4H6v-2h4a6 6 0 000-2zm0 0"/></svg>
+                <span id="routeDist">–</span>
+              </div>
+              <div class="route-chip">
+                <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 2a6 6 0 110 12A6 6 0 0110 4zm-.5 3v4.25l3.5 2.1-.7 1.15-4.3-2.6V7h1.5z"/></svg>
+                <span id="routeETA">–</span>
+              </div>
+            </div>
+            <div id="directionsPanel" class="directions-panel"></div>
+          </div>
+        </aside>
+
+        <div class="map-canvas-wrap">
+          <div id="googleMap" class="map-canvas" aria-label="Google Maps navigation"></div>
+          <div class="map-overlay" id="mapOverlay">
+            <div class="spinner"></div>
+            <p>Initialising map…</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FACULTY DETAIL MODAL -->
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true"
+       aria-labelledby="modalFacultyName" style="display:none" onclick="App.closeModal(event)">
+    <div class="modal">
+      <button class="modal-close" onclick="App.closeModal()" aria-label="Close modal">✕</button>
+      <div class="modal-header">
+        <h2 class="modal-title" id="modalFacultyName">–</h2>
+        <p class="modal-desc" id="modalFacultyDesc">–</p>
+      </div>
+      <div class="modal-body">
+        <div id="modalSpaces" class="modal-spaces"></div>
+        <div id="modalComingSoon" class="coming-soon-banner" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div>
+            <strong>Parking monitoring coming soon</strong>
+            <p>Navigation to this faculty is available below.</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-navigate" id="modalNavBtn" onclick="App.navigateToFaculty()">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
+          Navigate Here
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+
+  <script src="js/app.js"></script>
+  <script src="js/signalr-client.js"></script>
+  <script src="js/maps.js"></script>
+<script src="config.js"></script>
+
+<script>
+    const googleMapsScript = document.createElement("script");
+    googleMapsScript.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap&loading=async`;
+    googleMapsScript.async = true;
+    googleMapsScript.defer = true;
+    document.head.appendChild(googleMapsScript);
+</script>
+
+</body>
+</html>
