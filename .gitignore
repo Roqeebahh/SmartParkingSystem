@@ -35,3 +35,5 @@ appsettings.Development.json
 Thumbs.db
 
 config.js
+
+Hardware/secrets.h
